@@ -29,7 +29,7 @@ all: $(NAME)
 
 $(NAME): libft/libft.a $(OBJ)
 	@echo "\033[36mLinking...\033[0m"
-	$(CC) -o $(NAME) $(OBJ) $(FLAGS) $(DEBUG) $(SPEED) libft/libft.a
+	@$(CC) -o $(NAME) $(OBJ) $(FLAGS) $(DEBUG) $(SPEED) libft/libft.a
 	@echo "\033[32m[ ✔ ] Binary \033[1;32m$(NAME)\033[1;0m\033[32m created.\033[0m"
 libft/libft.a:
 	@make --no-print-directory -C $(LIBFT_DIR)
