@@ -53,4 +53,6 @@ typedef	struct		s_info
 	char			bukva;
 }					t_info;
 
+int		ft_printf(const char *msg, ...);
+
 #endif

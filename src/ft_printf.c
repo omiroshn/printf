@@ -779,6 +779,8 @@ int		ft_intlen(int num)
 	int count;
 
 	count = 0;
+	if (num <= 0)
+		count++;
 	while (num != 0)
 	{
 		num = num / 10;
@@ -811,7 +813,7 @@ int		parse_argument(const char *str, t_info *info)
 			{
 				int temp = va_arg(info->va_list, int);
 				ft_putnbr(temp);
-				info->res = ft_intlen(temp);
+				info->res += ft_intlen(temp);
 			}
 			else if (str[i] == 's')
 			{
@@ -819,12 +821,56 @@ int		parse_argument(const char *str, t_info *info)
 				ft_putstr(temp);
 				info->res += ft_strlen(temp);
 			}
-			else if (str[i] == 'o' || str[i] == 'O')
+			else if (str[i] == 'o')
 			{
-				int lel = va_arg(info->va_list, int);
-				
-				ft_putnbr(lel);
-				info->res += ft_intlen(lel);
+				int temp = va_arg(info->va_list, int);
+				char* lel = ft_itoa_base(temp, 8, 0);
+				ft_putstr(lel);
+				info->res += ft_strlen(lel);
+			}
+			else if (str[i] == 'O')
+			{
+				int temp = va_arg(info->va_list, int);
+				char* lel = ft_itoa_base(temp, 8, 1);
+				ft_putstr(lel);
+				info->res += ft_strlen(lel);
+			}
+			else if (str[i] == 'x')
+			{
+				int temp = va_arg(info->va_list, int);
+				char* lel = ft_itoa_base(temp, 16, 0);
+				ft_putstr(lel);
+				info->res += ft_strlen(lel);
+			}
+			else if (str[i] == 'X')
+			{
+				int temp = va_arg(info->va_list, int);
+				char* lel = ft_itoa_base(temp, 16, 1);
+				ft_putstr(lel);
+				info->res += ft_strlen(lel);
+			}
+			else if (str[i] == 'p')
+			{
+				uintmax_t	ret;
+				char		*str;
+				char		*tmp;
+				char		*buf;
+
+				str = ft_strnew(2);
+				str[0] = '0';
+				str[1] = 'x';
+				ret = va_arg(info->va_list, uintmax_t);
+				if (ret == 0)
+					buf = ft_strjoin(str, "0");
+				else
+				{
+					tmp = ft_itoa_base(ret, 16, 0);
+					buf = ft_strjoin(str, tmp);
+					free(tmp);
+					free(str);
+				}
+				ft_putstr(buf);
+				info->res += ft_strlen(buf);
 			}
 			else if (str[i] == '%')
 			{
@@ -860,23 +906,24 @@ int		ft_printf(const char *msg, ...)
 
 int main()
 {
-	// int i = 10;
+	int i = 10;
 	int res = 0;
-	// char *str = "lala";
-
+	char *str = "lala";
+	char *pointer;
 	// res = ft_printf("%d kaka\n", i);
 	// printf("%d\n", res);
 	// res = ft_printf("%s lala\n", str);
 	// printf("%d\n", res); 					//// cheking string and int
-
-	res = ft_printf("%o\n", 1144);
+//
+	res = ft_printf("%p\n", str);
 	printf("%d\n", res);						//// cheking octal
 
 	printf("-====== ORIGINAL =====-\n");
 	// printf("%d\n", printf("%d kaka\n", i));
 	// printf("%d\n", printf("%s lala\n", str));	//// 1
 
-	printf("%d\n", printf("%o\n", 1144));
-	
+	printf("%d\n", printf("%p\n", str));
+//
+
 	return (0);
 }

@@ -20,6 +20,7 @@ LIBFT = ft_atoi \
 		ft_isdigit \
 		ft_isprint \
 		ft_itoa \
+		ft_itoa_base \
 		ft_lstnew \
 		ft_lstdelone \
 		ft_lstdel \
@@ -84,13 +85,13 @@ all: $(NAME)
 .NOTPARALLEL: all $(NAME) clean fclean re 
 
 $(NAME): $(OBJ)
-	@echo "\033[36mLinking...\033[34m"
+	@printf "\n"
 	@ar rcs $(NAME) $(OBJ)
 	@ranlib $(NAME)
-	@echo  "\033[32m[ ✔ ] Library\033[1;32m $(NAME) \033[1;0m\033[32mis done! \033[0m"
+	@echo  "\033[1;32m $(NAME) \033[1;0m\033[32mis done! \033[0m"
 obj/%.o: %.c
 	@$(CC) -o $@ $(FLAGS) $(HEADERS) -c $^
-	@echo  "\033[37mCompilation of \033[97m$(notdir $<) \033[0m\033[37mdone. \033[0m"
+	@printf "."
 clean:
 	@rm -rf $(OBJ)
 	@echo  "\033[31m[ ✔ ] Objects files \033[91m$(OBJ_LIST) \033[0m\033[31m removed. \033[0m"
