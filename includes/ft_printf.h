@@ -17,7 +17,7 @@
 # include <stdlib.h>
 # include <stdarg.h>
 # include <stdio.h>
-# pragma pack(1)
+# include "libft.h"
 
 # define BIT7 127
 # define BIT11 2047
@@ -32,8 +32,14 @@ int	g_count;
 
 typedef	struct		s_info
 {
-	va_list			list;
+	va_list			va_list;
 	int				res;
+	int				alternative;
+	int				leftboundary;
+	int				rightboundary;
+	int				zeropadded;
+	int				blank;
+
 
 	int				minus;
 	int				sign;
@@ -46,20 +52,5 @@ typedef	struct		s_info
 	int				size;
 	char			bukva;
 }					t_info;
-
-char				*ft_strnew(size_t size);
-char				*ft_strjoin(char const *s1, char const *s2);
-void				*ft_memset(void *b, int c, size_t len);
-size_t				ft_strlen(const char *s);
-char				*ft_strsub(char const *s, unsigned int start, size_t len);
-int					ft_tolower(int c);
-char				*ft_strdup(char *src);
-// void				*ft_memset(void *b, int c, size_t len);
-// char				*ft_strdup(const char *s1);
-// char				*ft_strjoin(char const *s1, char const *s2);
-// char				*ft_strnew(size_t size);
-// size_t				ft_strlen(const char *s);
-// int					ft_tolower(int c);
-// char				*ft_strsub(char const *s, unsigned int start, size_t len);
 
 #endif

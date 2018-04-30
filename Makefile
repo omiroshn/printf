@@ -10,26 +10,32 @@
 #                                                                              #
 # **************************************************************************** #
 
-NAME = libftprintf.a
+NAME = ft_printf
 CC = clang
-FILES = main libft_func libft_func2
+FILES = ft_printf #libft_func libft_func2
 
 SRC = $(addprefix src/, $(addsuffix .c, $(FILES)))
 OBJ = $(addprefix obj/, $(addsuffix .o, $(FILES)))
 OBJ_LIST = $(addsuffix .o, $(FILES))
 FLAGS = -Wall -Wextra -Werror -g
-HEADERS = -I./includes/
+HEADERS = -I./includes/ -I./libft/includes/
 
 all: $(NAME)
 
 .PHONY: all clean fclean re
 .NOTPARALLEL: all $(NAME) clean fclean re 
 
-$(NAME): $(OBJ)
-	@echo "\033[36mLinking...\033[0m"
-	@ar rc $(NAME) $(OBJ)
-	@ranlib $(NAME)
-	@echo "\033[32m[ ✔ ] Binary \033[1;32m$(NAME)\033[1;0m\033[32m created.\033[0m"
+# $(NAME): $(OBJ)
+# 	@echo "\033[36mLinking...\033[0m"
+# 	@ar rc $(NAME) $(OBJ)
+# 	@ranlib $(NAME)
+# 	@echo "\033[32m[ ✔ ] Binary \033[1;32m$(NAME)\033[1;0m\033[32m created.\033[0m"
+
+$(NAME): $(OBJ) libft/libft.a
+	$(CC) $(OBJ) $(FLAGS) libft/libft.a $(HEADERS) -o $(NAME)
+
+libft/libft.a:
+	make -C libft/
 obj/%.o: src/%.c
 	@$(CC) -o $@ $(FLAGS) $(HEADERS) -c $^
 	@echo "\033[37mCompilation of \033[97m$(notdir $<) \033[0m\033[37mdone. \033[0m"
