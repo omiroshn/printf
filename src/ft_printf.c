@@ -789,6 +789,299 @@ int		ft_intlen(int num)
 	return (count);
 }
 
+int		is_flag(char c)
+{
+	if (c == 's' || c == 'S' || c == 'p' || c == 'd'
+		|| c == 'D' || c == 'i' || c == 'o' || c == 'O'
+		|| c == 'u' || c == 'U' || c == 'x' || c == 'X'
+		|| c == 'c' || c == 'C')
+		return (1);
+	return (0);
+}
+
+void	init_flags(t_info *info)
+{
+	info->hash = 0;
+	info->minus = 0;
+	info->plus = 0;
+	info->zero = 0;
+	info->blank = 0;
+	info->width = 0;
+	info->precision = 0;
+}
+
+int		count_width(const char *str)
+{
+	int i;
+
+	i = 0;
+	while (str[i] >= '0' && str[i] <= '9')
+		i++;
+	return (i);
+}
+
+int		count_stoi(const char *str)
+{
+	int i;
+	int num;
+
+	i = 0;
+	num = 0;
+	while (str[i] >= '0' && str[i] <= '9')
+	{
+		num *= 10;
+		num += str[i] - '0';
+		i++;
+	}
+	return (num);
+}
+
+int		deal_with_flags(t_info *info, const char *str, int i)
+{
+	while (!is_flag(str[i]))
+	{
+		if (str[i] == '-')
+		{
+			info->minus = 1;
+			i++;
+		}
+		if (str[i] == '+')
+		{
+			info->plus = 1;
+			i++;
+		}
+		if (str[i] == ' ')
+		{
+			info->blank = 1;
+			if (str[i + 1] == ' ')
+			{
+				while (str[i] == ' ')
+				i++;	
+			}
+			else
+				i++;
+		}
+		if (str[i] == '#')
+		{
+			info->hash = 1;
+			i++;
+		}
+		if (str[i] == '0')
+		{
+			info->zero = 1;
+			i++;
+		}
+		if (str[i] == '*')
+		{
+			info->width = va_arg(info->va_list, int);
+			i++;
+		}
+		if (str[i] > '0' && str[i] <= '9')
+		{
+			info->width = count_stoi(&str[i]);
+			i += count_width(&str[i]);
+		}
+		if (str[i] == '.')
+		{
+			i++;
+			info->precision = count_stoi(&str[i]);
+			i += count_width(&str[i]);
+		}
+		if (str[i] == '*')
+		{
+			info->precision = va_arg(info->va_list, int);
+			i++;
+		}
+		if (str[i] == 'l')
+		{
+			info->cast = _LONG;
+			i++;
+		}
+		if (str[i] == 'h' && str[i + 1] == 'h')
+		{
+			info->cast = _UCHAR;
+			i += 2;
+		}
+		if (str[i] == 'h')
+		{
+			info->cast = _USHORTINT;
+			i++;
+		}
+		if (str[i] == 'l' && str[i + 1] == 'l')
+		{
+			info->cast = _LONGLONG;
+			i += 2;
+		}
+		if (str[i] == 'j')
+		{
+			info->cast = _UINTMAXT;
+			i++;
+		}
+		if (str[i] == 'z')
+		{
+			info->cast = _SIZET;
+			i++;
+		}
+	}
+	return (i);
+}
+
+int		deal_with_types(t_info *info, const char *str, int i)
+{
+	if (str[i] == 'd' || str[i] == 'D' ||str[i] == 'i')
+	{
+		uintmax_t temp;
+
+		if (info->cast == _LONG && str[i] == 'D')
+			temp = va_arg(info->va_list, unsigned long int);
+		else if (info->cast == _UCHAR)
+			temp = (unsigned char)va_arg(info->va_list, int);
+		else if (info->cast == _USHORTINT)
+			temp = (unsigned short int)va_arg(info->va_list, int);
+		else if (info->cast == _LONGLONG)
+			temp = va_arg(info->va_list, unsigned long long int);
+		else if (info->cast == _UINTMAXT)
+			temp = va_arg(info->va_list, uintmax_t);
+		else if (info->cast == _SIZET)
+			temp = va_arg(info->va_list, size_t);
+		else
+			temp = va_arg(info->va_list, int);
+
+		if (info->width > 0)
+			info->width -= ft_intlen(temp);
+		if (info->precision > 0)
+			info->precision -= ft_intlen(temp);
+		if (info->precision > 0)
+			info->width -= info->precision;
+		if (info->plus)
+			info->width--;
+
+		int wid = info->width;
+		if (info->minus)
+			info->width = 0;
+
+		if (info->blank && !info->width)
+			write(1, " ", 1);
+
+
+		if (info->zero && !info->precision)
+			while (info->width-- > 0)
+				write(1, "0", 1);
+		else
+			while (info->width-- > 0)
+				write(1, " ", 1);
+
+		if (temp > 0 && wid-- && info->plus)
+			write(1, "+", 1);
+		while (info->precision-- > 0)
+			write(1, "0", 1);
+		ft_putnbr(temp);
+		if (info->minus)
+			while (wid-- > 0)
+				write(1, " ", 1);
+		info->res += ft_intlen(temp);
+	}
+	else if (str[i] == 's')
+	{
+		char *temp = va_arg(info->va_list, char*);
+		int len;
+		if (!temp)
+		{
+			len = 0;
+			temp = "(null)";
+			if (info->width)
+				info->width -= ft_strlen(temp);
+		}
+		else
+		{
+			len = ft_strlen(temp);
+			if (info->width)
+				info->width -= len;
+		}
+		if (info->plus)
+			info->width--;
+		int wid = info->width;
+
+		if (info->minus)
+		{
+			info->width = 0;
+		}
+
+		if (info->blank && !info->width)
+			write(1, " ", 1);
+
+		
+		if (info->zero)
+			while (info->width-- > 0)
+				write(1, "0", 1);
+		else
+			while (info->width-- > 0)
+				write(1, " ", 1);
+
+		if (temp > 0 && wid && info->plus)
+			write(1, "+", 1);
+		ft_putstr(temp);
+		info->res += len;
+	}
+	else if (str[i] == 'o')
+	{
+		int temp = va_arg(info->va_list, int);
+		char* lel = ft_itoa_base(temp, 8, 0);
+		ft_putstr(lel);
+		info->res += ft_strlen(lel);
+	}
+	else if (str[i] == 'O')
+	{
+		int temp = va_arg(info->va_list, int);
+		char* lel = ft_itoa_base(temp, 8, 1);
+		ft_putstr(lel);
+		info->res += ft_strlen(lel);
+	}
+	else if (str[i] == 'x')
+	{
+		int temp = va_arg(info->va_list, int);
+		char* lel = ft_itoa_base(temp, 16, 0);
+		ft_putstr(lel);
+		info->res += ft_strlen(lel);
+	}
+	else if (str[i] == 'X')
+	{
+		int temp = va_arg(info->va_list, int);
+		char* lel = ft_itoa_base(temp, 16, 1);
+		ft_putstr(lel);
+		info->res += ft_strlen(lel);
+	}
+	else if (str[i] == 'p')
+	{
+		uintmax_t	ret;
+		char		*str;
+		char		*tmp;
+		char		*buf;
+
+		str = ft_strnew(2);
+		str[0] = '0';
+		str[1] = 'x';
+		ret = va_arg(info->va_list, uintmax_t);
+		if (ret == 0)
+			buf = ft_strjoin(str, "0");
+		else
+		{
+			tmp = ft_itoa_base(ret, 16, 0);
+			buf = ft_strjoin(str, tmp);
+			free(tmp);
+			free(str);
+		}
+		ft_putstr(buf);
+		info->res += ft_strlen(buf);
+	}
+	else if (str[i] == '%')
+	{
+		write(1, "%", 1);
+		info->res += 1;
+	}
+	return (i);
+}
+
 int		parse_argument(const char *str, t_info *info)
 {
 	int i;
@@ -798,85 +1091,10 @@ int		parse_argument(const char *str, t_info *info)
 	{
 		if (str[i] == '%')
 		{
-			if (str[i] == '#')
-				info->alternative = 1;
-			else if (str[i] == '0')
-				info->zeropadded = 1;
-			else if (str[i] == '-')
-				info->leftboundary = 1;
-			else if (str[i] == ' ')
-				info->blank = 1;
-			else if (str[i] == '+')
-				info->rightboundary = 1;
 			i++;
-			if (str[i] == 'd' || str[i] == 'i')
-			{
-				int temp = va_arg(info->va_list, int);
-				ft_putnbr(temp);
-				info->res += ft_intlen(temp);
-			}
-			else if (str[i] == 's')
-			{
-				char *temp = va_arg(info->va_list, char*);
-				ft_putstr(temp);
-				info->res += ft_strlen(temp);
-			}
-			else if (str[i] == 'o')
-			{
-				int temp = va_arg(info->va_list, int);
-				char* lel = ft_itoa_base(temp, 8, 0);
-				ft_putstr(lel);
-				info->res += ft_strlen(lel);
-			}
-			else if (str[i] == 'O')
-			{
-				int temp = va_arg(info->va_list, int);
-				char* lel = ft_itoa_base(temp, 8, 1);
-				ft_putstr(lel);
-				info->res += ft_strlen(lel);
-			}
-			else if (str[i] == 'x')
-			{
-				int temp = va_arg(info->va_list, int);
-				char* lel = ft_itoa_base(temp, 16, 0);
-				ft_putstr(lel);
-				info->res += ft_strlen(lel);
-			}
-			else if (str[i] == 'X')
-			{
-				int temp = va_arg(info->va_list, int);
-				char* lel = ft_itoa_base(temp, 16, 1);
-				ft_putstr(lel);
-				info->res += ft_strlen(lel);
-			}
-			else if (str[i] == 'p')
-			{
-				uintmax_t	ret;
-				char		*str;
-				char		*tmp;
-				char		*buf;
-
-				str = ft_strnew(2);
-				str[0] = '0';
-				str[1] = 'x';
-				ret = va_arg(info->va_list, uintmax_t);
-				if (ret == 0)
-					buf = ft_strjoin(str, "0");
-				else
-				{
-					tmp = ft_itoa_base(ret, 16, 0);
-					buf = ft_strjoin(str, tmp);
-					free(tmp);
-					free(str);
-				}
-				ft_putstr(buf);
-				info->res += ft_strlen(buf);
-			}
-			else if (str[i] == '%')
-			{
-				write(1, "%", 1);
-				info->res += 1;
-			}
+			init_flags(info);
+			i = deal_with_flags(info, str, i);
+			i = deal_with_types(info, str, i);
 		}
 		else
 		{
@@ -893,11 +1111,7 @@ int		ft_printf(const char *msg, ...)
 	t_info	info;
 
 	info.res = 0;
-	info.alternative = 0;
-	info.leftboundary = 0;
-	info.rightboundary = 0;
-	info.zeropadded = 0;
-	info.blank = 0;
+	init_flags(&info);
 	va_start(info.va_list, msg);
 	info.res = parse_argument(msg, &info);
 	va_end(info.va_list);
@@ -906,7 +1120,9 @@ int		ft_printf(const char *msg, ...)
 
 int main()
 {
-	int i = 10;
+	// setlocale( LC_ALL, "" );
+	int i = 1111;
+	int j = 1;
 	int res = 0;
 	char *str = "lala";
 	char *pointer;
@@ -914,15 +1130,127 @@ int main()
 	// printf("%d\n", res);
 	// res = ft_printf("%s lala\n", str);
 	// printf("%d\n", res); 					//// cheking string and int
-//
-	res = ft_printf("%p\n", str);
-	printf("%d\n", res);						//// cheking octal
 
-	printf("-====== ORIGINAL =====-\n");
-	// printf("%d\n", printf("%d kaka\n", i));
-	// printf("%d\n", printf("%s lala\n", str));	//// 1
+//						//// cheking int
 
-	printf("%d\n", printf("%p\n", str));
+	   printf("OR: |%*.*d\n", 2, 7, i); //
+	ft_printf("MY: |%*.*d\n", 2, 7, i);
+	// j++;
+	//    printf("%d OR: %020.10d\n", j, 0); //
+	// ft_printf("%d MY: %020.10d\n", j, 0);
+	// j++;
+	//    printf("%d OR: %10.5d\n", j, i); // width
+	// ft_printf("%d MY: %10.5d\n", j, i);
+	// j++;
+	//    printf("%d OR: %5d\n", j, i);
+	// ft_printf("%d MY: %5d\n", j, i);
+	// j++;
+	//    printf("%d OR: %5d\n", j, 0);
+	// ft_printf("%d MY: %5d\n", j, 0);
+	// j++;
+	//    printf("%d OR: %.20d\n", j, i); // precision
+	// ft_printf("%d MY: %.20d\n", j, i);
+	// j++;
+	//    printf("%d OR: %.5d\n", j, i);
+	// ft_printf("%d MY: %.5d\n", j, i);
+	// j++;
+	//    printf("%d OR: %.5d\n", j, 0);
+	// ft_printf("%d MY: %.5d\n", j, 0);
+	// j++;
+	//    printf("%d OR: %#d\n", j, i); // hash
+	// ft_printf("%d MY: %#d\n", j, i);
+	// j++;
+	//    printf("%d OR: %#5d\n", j, 0);
+	// ft_printf("%d MY: %#5d\n", j, 0);
+	// j++;
+
+	//    printf("%d OR: %#20d\n", j, i); // hash + width
+	// ft_printf("%d MY: %#20d\n", j, i);
+	// j++;
+	//    printf("%d OR: %#5d\n", j, i);
+	// ft_printf("%d MY: %#5d\n", j, i);
+	// j++;
+	//    printf("%d OR: %#5d\n", j, 0);
+	// ft_printf("%d MY: %#5d\n", j, 0);
+	// j++;
+	//    printf("%d OR: %#.20d\n", j, i); // hash + precision
+	// ft_printf("%d MY: %#.20d\n", j, i);
+	// j++;
+	//    printf("%d OR: %#.5d\n", j, i);
+	// ft_printf("%d MY: %#.5d\n", j, i);
+	// j++;
+	//    printf("%d OR: %#.5d\n", j, 0);
+	// ft_printf("%d MY: %#.5d\n", j, 0);
+	// j++;
+
+	//    printf("%d OR: %#20d\n", j, 0);
+	// ft_printf("%d MY: %#20d\n", j, 0);
+	// j++;
+	//    printf("%d OR: %#5d\n", j, 0);
+	// ft_printf("%d MY: %#5d\n", j, 0);
+	// j++;
+	//    printf("%d OR: %#.20d\n", j, 0);
+	// ft_printf("%d MY: %#.20d\n", j, 0);
+	// j++;
+	//    printf("%d OR: %.5d\n", j, 0);
+	// ft_printf("%d MY: %.5d\n", j, 0);
+	// j++;
+	//    printf("%d OR: %-20d\n", j, 0);
+	// ft_printf("%d MY: %-20d\n", j, 0);
+	// j++;
+	//    printf("%d OR: %#-5d\n", j, 0);
+	// ft_printf("%d MY: %#-5d\n", j, 0);
+	// j++;
+
+	//    printf("%d OR: %#015d\n", j, i);
+	// ft_printf("%d MY: %#015d\n", j, i);
+	// j++;
+	//    printf("%d OR: %#05d\n", j, i);
+	// ft_printf("%d MY: %#05d\n", j, i);
+	// j++;
+	//    printf("%d OR: %#020d\n", j, 0);
+	// ft_printf("%d MY: %#020d\n", j, 0);
+	// j++;
+	//    printf("%d OR: %#05d\n", j, 0);
+	// ft_printf("%d MY: %#05d\n", j, 0);
+	// j++;
+	//    printf("%d OR: %20.10d\n", j, i);
+	// ft_printf("%d MY: %20.10d\n", j, i);
+	// j++;
+	//    printf("%d OR: %10.10d\n", j, i);
+	// ft_printf("%d MY: %10.10d\n", j, i);
+	// j++;
+	//    printf("%d OR: %5.10d\n", j, i);
+	// ft_printf("%d MY: %5.10d\n", j, i);
+	// j++;
+	//    printf("%d OR: %#-20.10d\n", j, i);
+	// ft_printf("%d MY: %#-20.10d\n", j, i);
+	// j++;
+	//    printf("%d OR: %#-5.10d\n", j, i);
+	// ft_printf("%d MY: %#-5.10d\n", j, i);
+	// j++;
+	//    printf("%d OR: %#-20.10d\n", j, 0);
+	// ft_printf("%d MY: %#-20.10d\n", j, 0);
+	// j++;
+	//    printf("%d OR: %#-5.10d\n", j, 0);
+	// ft_printf("%d MY: %#-5.10d\n", j, 0);
+	// j++;
+	//    printf("%d OR: %#020.10d\n", j, i); //
+	// ft_printf("%d MY: %#020.10d\n", j, i);
+	// j++;
+	//    printf("%d OR: %#05.10d\n", j, i);
+	// ft_printf("%d MY: %#05.10d\n", j, i);
+	// j++;
+	//    printf("%d OR: %#020.10d\n", j, 0); //
+	// ft_printf("%d MY: %#020.10d\n", j, 0);
+	// j++;
+	//    printf("%d OR: %#05.10d\n", j, 0);
+	// ft_printf("%d MY: %#05.10d\n", j, 0);
+	// j++;
+	//    printf("%d OR: %#010.10d\n", j, i);
+	// ft_printf("%d MY: %#010.10d\n", j, i);
+	// j++;
+
 //
 
 	return (0);

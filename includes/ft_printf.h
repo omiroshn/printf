@@ -26,31 +26,26 @@
 # define BIT26 67108863
 # define BIT31 2147483647
 
-int	g_count;
-
-# define A(x) ((x) < 0 ? -(x) : (x))
+#define _LONG 1
+#define _UCHAR 2
+#define _USHORTINT 3
+#define _LONGLONG 4
+#define _UINTMAXT 5
+#define _SIZET 6
 
 typedef	struct		s_info
 {
 	va_list			va_list;
 	int				res;
-	int				alternative;
-	int				leftboundary;
-	int				rightboundary;
-	int				zeropadded;
-	int				blank;
-
-
+	int				hash;
 	int				minus;
-	int				sign;
+	int				plus;
 	int				zero;
-	int				resh;
-	int				space;
-
+	int				blank;
+	int				star;
 	int				width;
-	int				prec;
-	int				size;
-	char			bukva;
+	int				precision;
+	int				cast;
 }					t_info;
 
 int		ft_printf(const char *msg, ...);

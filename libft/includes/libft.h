@@ -86,7 +86,7 @@ int				ft_iscntrl(int c);
 int				ft_isgraph(int c);
 int				ft_ispunct(int c);
 int				ft_isspace(int c);
-char			*ft_itoa_base(unsigned long long num, int base, int flag);
+char			*ft_itoa_base(uintmax_t num, int base, int flag);
 int				ft_atoi_base(char *str, int base);
 int				get_next_line(const int fd, char **line);
 double			ft_map(double value, double istart,
