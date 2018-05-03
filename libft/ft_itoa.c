@@ -12,12 +12,12 @@
 
 #include "libft.h"
 
-char	*ft_itoa(int n)
+char	*ft_itoa(intmax_t n)
 {
-	char	*str;
-	int		temp;
-	int		len;
-	int		minus;
+	char		*str;
+	intmax_t	temp;
+	intmax_t	len;
+	intmax_t	minus;
 
 	len = ((n <= 0) ? 1 : 0);
 	minus = ((n < 0) ? -1 : 1);

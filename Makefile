@@ -19,6 +19,7 @@ OBJ = $(addprefix obj/, $(addsuffix .o, $(FILES)))
 OBJ_LIST = $(addsuffix .o, $(FILES))
 # FLAGS = -Wall -Wextra -Werror -g
 HEADERS = -I./includes/ -I./libft/includes/
+MAKELIB = --no-print-directory -j3 -C
 
 all: $(NAME)
 
@@ -35,7 +36,7 @@ $(NAME): $(OBJ) libft/libft.a
 	@$(CC) $(OBJ) $(FLAGS) libft/libft.a $(HEADERS) -o $(NAME)
 	@echo "."
 libft/libft.a:
-	@make -C libft/
+	@make $(MAKELIB) libft/
 obj/%.o: src/%.c
 	@$(CC) -o $@ $(FLAGS) $(HEADERS) -c $^
 	@echo "\033[37mCompilation of \033[97m$(notdir $<) \033[0m\033[37mdone. \033[0m"
@@ -43,7 +44,7 @@ clean:
 	@rm -rf $(OBJ)
 	@echo "\033[31m[ ✔ ] Objects files \033[91m$(OBJ_LIST) \033[0m\033[31mremoved. \033[0m"
 fclean: clean
-	@make fclean -C libft/
+	@make fclean $(MAKELIB) libft/
 	@rm -rf $(NAME)
 	@echo "\033[31m[ ✔ ] Binary \033[1;31m$(NAME) \033[1;0m\033[31mremoved.\033[0m"
 re: fclean all

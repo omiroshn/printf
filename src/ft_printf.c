@@ -840,88 +840,50 @@ int		deal_with_flags(t_info *info, const char *str, int i)
 {
 	while (!is_flag(str[i]))
 	{
-		if (str[i] == '-')
-		{
+		if (str[i] == '-' && i++)
 			info->minus = 1;
-			i++;
-		}
-		if (str[i] == '+')
-		{
+		if (str[i] == '+' && i++)
 			info->plus = 1;
-			i++;
-		}
 		if (str[i] == ' ')
 		{
 			info->blank = 1;
 			if (str[i + 1] == ' ')
-			{
 				while (str[i] == ' ')
-				i++;	
-			}
+					i++;
 			else
 				i++;
 		}
-		if (str[i] == '#')
-		{
+		if (str[i] == '#' && i++)
 			info->hash = 1;
-			i++;
-		}
-		if (str[i] == '0')
-		{
+		if (str[i] == '0' && i++)
 			info->zero = 1;
-			i++;
-		}
-		if (str[i] == '*')
-		{
+		if (str[i] == '*' && i++)
 			info->width = va_arg(info->va_list, int);
-			i++;
-		}
 		if (str[i] > '0' && str[i] <= '9')
 		{
 			info->width = count_stoi(&str[i]);
 			i += count_width(&str[i]);
 		}
-		if (str[i] == '.')
+		if (str[i] == '.' && i++)
 		{
-			i++;
 			info->precision = count_stoi(&str[i]);
 			i += count_width(&str[i]);
 		}
-		if (str[i] == '*')
-		{
+		if (str[i] == '*' && i++)
 			info->precision = va_arg(info->va_list, int);
-			i++;
-		}
-		if (str[i] == 'l')
-		{
+
+		if (str[i] == 'l' && i++)
 			info->cast = _LONG;
-			i++;
-		}
-		if (str[i] == 'h' && str[i + 1] == 'h')
-		{
+		if (str[i] == 'h' && str[i++ + 1] == 'h' && i++)
 			info->cast = _UCHAR;
-			i += 2;
-		}
-		if (str[i] == 'h')
-		{
+		if (str[i] == 'h' && i++)
 			info->cast = _USHORTINT;
-			i++;
-		}
-		if (str[i] == 'l' && str[i + 1] == 'l')
-		{
+		if (str[i] == 'l' && str[i++ + 1] == 'l' && i++)
 			info->cast = _LONGLONG;
-			i += 2;
-		}
-		if (str[i] == 'j')
-		{
+		if (str[i] == 'j' && i++)
 			info->cast = _UINTMAXT;
-			i++;
-		}
-		if (str[i] == 'z')
-		{
+		if (str[i] == 'z' && i++)
 			info->cast = _SIZET;
-			i++;
-		}
 	}
 	return (i);
 }
@@ -932,7 +894,7 @@ int		deal_with_types(t_info *info, const char *str, int i)
 	{
 		uintmax_t temp;
 
-		if (info->cast == _LONG && str[i] == 'D')
+		if (info->cast == _LONG || str[i] == 'D')
 			temp = va_arg(info->va_list, unsigned long int);
 		else if (info->cast == _UCHAR)
 			temp = (unsigned char)va_arg(info->va_list, int);
@@ -950,9 +912,10 @@ int		deal_with_types(t_info *info, const char *str, int i)
 		if (info->width > 0)
 			info->width -= ft_intlen(temp);
 		if (info->precision > 0)
+		{
 			info->precision -= ft_intlen(temp);
-		if (info->precision > 0)
 			info->width -= info->precision;
+		}
 		if (info->plus)
 			info->width--;
 
@@ -962,7 +925,6 @@ int		deal_with_types(t_info *info, const char *str, int i)
 
 		if (info->blank && !info->width)
 			write(1, " ", 1);
-
 
 		if (info->zero && !info->precision)
 			while (info->width-- > 0)
@@ -975,7 +937,7 @@ int		deal_with_types(t_info *info, const char *str, int i)
 			write(1, "+", 1);
 		while (info->precision-- > 0)
 			write(1, "0", 1);
-		ft_putnbr(temp);
+		ft_putstr(ft_itoa(temp));
 		if (info->minus)
 			while (wid-- > 0)
 				write(1, " ", 1);
@@ -1089,9 +1051,8 @@ int		parse_argument(const char *str, t_info *info)
 	i = 0;
 	while (str[i])
 	{
-		if (str[i] == '%')
+		if (str[i] == '%' && i++)
 		{
-			i++;
 			init_flags(info);
 			i = deal_with_flags(info, str, i);
 			i = deal_with_types(info, str, i);
@@ -1133,8 +1094,16 @@ int main()
 
 //						//// cheking int
 
-	   printf("OR: |%*.*d\n", 2, 7, i); //
-	ft_printf("MY: |%*.*d\n", 2, 7, i);
+	   printf("%ld\n", 0101010010101010);
+	ft_printf("%ld\n", 0101010010101010);
+
+	// char c = 255;
+	// ft_printf("%X\n", c);
+	// ft_printf("%X\n", (unsigned char)c);
+	// ft_printf("%hhX\n", c);
+
+	//    printf("OR: |%*.*d\n", 2, 7, i); //
+	// ft_printf("MY: |%*.*d\n", 2, 7, i);
 	// j++;
 	//    printf("%d OR: %020.10d\n", j, 0); //
 	// ft_printf("%d MY: %020.10d\n", j, 0);
