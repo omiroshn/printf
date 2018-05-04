@@ -872,8 +872,11 @@ int		deal_with_flags(t_info *info, const char *str, int i)
 		if (str[i] == '*' && i++)
 			info->precision = va_arg(info->va_list, int);
 
-		if (str[i] == 'l' && i++)
+		if (str[i] == 'l')
+		{
 			info->cast = _LONG;
+			i++;
+		}
 		if (str[i] == 'h' && str[i++ + 1] == 'h' && i++)
 			info->cast = _UCHAR;
 		if (str[i] == 'h' && i++)
@@ -890,7 +893,7 @@ int		deal_with_flags(t_info *info, const char *str, int i)
 
 int		deal_with_types(t_info *info, const char *str, int i)
 {
-	if (str[i] == 'd' || str[i] == 'D' ||str[i] == 'i')
+	if (str[i] == 'd' || str[i] == 'D' || str[i] == 'i')
 	{
 		uintmax_t temp;
 
@@ -908,6 +911,7 @@ int		deal_with_types(t_info *info, const char *str, int i)
 			temp = va_arg(info->va_list, size_t);
 		else
 			temp = va_arg(info->va_list, int);
+
 
 		if (info->width > 0)
 			info->width -= ft_intlen(temp);
@@ -937,6 +941,7 @@ int		deal_with_types(t_info *info, const char *str, int i)
 			write(1, "+", 1);
 		while (info->precision-- > 0)
 			write(1, "0", 1);
+		printf("%ju\n", temp);
 		ft_putstr(ft_itoa(temp));
 		if (info->minus)
 			while (wid-- > 0)
@@ -1094,8 +1099,8 @@ int main()
 
 //						//// cheking int
 
-	   printf("%ld\n", 0101010010101010);
-	ft_printf("%ld\n", 0101010010101010);
+	   // printf("%ld\n", 0101010010101010);
+	ft_printf("%d\n", 0101010010101010);
 
 	// char c = 255;
 	// ft_printf("%X\n", c);
