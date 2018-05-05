@@ -13,10 +13,11 @@
 #ifndef FT_PRINTF_H
 # define FT_PRINTF_H
 
+# include <unistd.h>
+# include <stdlib.h>
 # include <stdarg.h>
 # include <stdio.h>
 # include "libft.h"
-
 
 # define BIT7 127
 # define BIT11 2047
@@ -40,7 +41,7 @@ typedef	struct		s_info
 	int				minus;
 	int				plus;
 	int				zero;
-	int				blank;
+	int				space;
 	int				star;
 	int				width;
 	int				precision;
