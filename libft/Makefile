@@ -10,9 +10,9 @@
 #                                                                              #
 # **************************************************************************** #
 
-NAME = libft.a
+NAME = libftprintf.a
 CC = clang
-FLAGS = -Wall -Wextra -Werror -Ofast
+# FLAGS = -Wall -Wextra -Werror -Ofast
 LIBFT = ft_atoi \
 		ft_bzero \
 		ft_countwords \
@@ -74,7 +74,8 @@ LIBFT = ft_atoi \
 		get_next_line \
 		ft_atoi_base \
 		rgb_to_int \
-		rgb_smooth
+		rgb_smooth \
+		ft_printf
 OBJ = $(addprefix obj/, $(addsuffix .o, $(LIBFT)))
 OBJ_LIST = $(addsuffix .o, $(LIBFT))
 HEADERS = -I./includes
@@ -96,6 +97,6 @@ clean:
 	@rm -rf $(OBJ)
 	@echo  "\033[31m[ ✔ ] Objects files \033[91m$(OBJ_LIST) \033[0m\033[31m removed. \033[0m"
 fclean: clean
-	@rm -f $(NAME)
+	@rm -rf $(NAME)
 	@echo "\033[31m[ ✔ ] Lib \033[1;31m$(NAME) \033[1;0m\033[31mremoved.\033[0m"
 re: fclean all

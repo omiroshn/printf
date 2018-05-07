@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../includes/ft_printf.h"
+#include "ft_printf.h"
 
 // void	ft_putaddr_fd(void *str)
 // {
@@ -773,8 +773,46 @@
 // 	return (i + 1);
 // }
 
+char	*ft_itoa_u(uintmax_t n)
+{
+	char		*str;
+	uintmax_t	temp;
+	uintmax_t	len;
+	uintmax_t	minus;
 
-int		ft_intlen(int num)
+	len = ((n <= 0) ? 1 : 0);
+	temp = n;
+	while (++len && temp)
+		temp /= 10;
+	if (!(str = (char *)malloc(sizeof(char) * len)))
+		return (NULL);
+	str[--len] = '\0';
+	*str = '0';
+	temp = n;
+	while (temp)
+	{
+		str[--len] = '0' + 1 * (temp % 10);
+		temp /= 10;
+	}
+	return (str);
+}
+
+int		ft_intlen_u(uintmax_t num)
+{
+	int count;
+
+	count = 0;
+	if (num <= 0)
+		count++;
+	while (num != 0)
+	{
+		num = num / 10;
+		count++;
+	}
+	return (count);
+}
+
+int		ft_intlen(intmax_t num)
 {
 	int count;
 
@@ -806,8 +844,12 @@ void	init_flags(t_info *info)
 	info->plus = 0;
 	info->zero = 0;
 	info->space = 0;
+	info->star = 0;
 	info->width = 0;
 	info->precision = 0;
+	info->dot = 0;
+	info->cast = 0;
+	info->smt = 0;
 }
 
 int		count_width(const char *str)
@@ -848,87 +890,60 @@ int		deal_with_flags(t_info *info, const char *str, int i)
 {
 	while (!is_flag(str[i]))
 	{
-		if (str[i] == '-')
-		{
+		if (str[i] == '-' && i++)
 			info->minus = 1;
-			i++;
-		}
-		else if (str[i] == '+')
-		{
+		else if (str[i] == '+' && i++)
 			info->plus = 1;
-			i++;
-		}
 		else if (str[i] == ' ')
 		{
 			info->space = 1;
 			if (str[i + 1] == ' ')
-			{
 				while (str[i] == ' ')
-				i++;	
-			}
+					i++;
 			else
 				i++;
 		}
-		else if (str[i] == '#')
-		{
+		else if (str[i] == '#' && i++)
 			info->hash = 1;
-			i++;
-		}
-		else if (str[i] == '0')
-		{
+		else if (str[i] == '0' && i++)
 			info->zero = 1;
-			i++;
-		}
-		else if (str[i] == '*')
+		else if (str[i] == '*' && i++)
 		{
-			info->width = va_arg(info->va_list, int);
-			i++;
+			info->star = 1;
+			if (info->dot == 0)
+				info->width = va_arg(info->va_list, int);
+			else if (info->dot == 1)
+				info->precision = va_arg(info->va_list, int);
 		}
 		else if (str[i] > '0' && str[i] <= '9')
 		{
 			info->width = count_stoi(&str[i]);
 			i += count_width(&str[i]);
 		}
-		else if (str[i] == '.')
+		else if (str[i] == '.' && i++)
 		{
-			i++;
+			info->dot = 1;
 			info->precision = count_stoi(&str[i]);
 			i += count_width(&str[i]);
 		}
-		else if (str[i] == '*')
-		{
-			info->precision = va_arg(info->va_list, int);
-			i++;
-		}
-		else if (str[i] == 'l')
-		{
+		else if (str[i] == 'l' && i++)
 			info->cast = _LONG;
-			i++;
-		}
-		else if (str[i] == 'h' && str[i + 1] == 'h')
-		{
+		else if (str[i] == 'h' && str[i + 1] == 'h' && i++ && i++)
 			info->cast = _UCHAR;
-			i += 2;
-		}
-		else if (str[i] == 'h')
-		{
+		else if (str[i] == 'h' && i++)
 			info->cast = _USHORTINT;
-			i++;
-		}
-		else if (str[i] == 'l' && str[i + 1] == 'l')
-		{
+		else if (str[i] == 'l' && str[i + 1] == 'l' && i++ && i++)
 			info->cast = _LONGLONG;
-			i += 2;
-		}
-		else if (str[i] == 'j')
-		{
+		else if (str[i] == 'j' && i++)
 			info->cast = _UINTMAXT;
-			i++;
-		}
-		else if (str[i] == 'z')
-		{
+		else if (str[i] == 'z' && i++)
 			info->cast = _SIZET;
-			i++;
+		else if (str[i] == '%')
+			return (i);
+		else if (someth_else(str[i]))
+		{
+			info->smt = 1;
+			return (--i);
 		}
 		else
 			i++;
@@ -938,7 +953,7 @@ int		deal_with_flags(t_info *info, const char *str, int i)
 
 uintmax_t	ft_cast_hex(uintmax_t temp, t_info *info, const char *str, int i)
 {
-	if (info->cast == _LONG || str[i] == 'D')
+	if (info->cast == _LONG || str[i] == 'U' || str[i] == 'O')
 		temp = va_arg(info->va_list, unsigned long);
 	else if (info->cast == _UCHAR)
 		temp = (unsigned char)va_arg(info->va_list, int);
@@ -951,7 +966,7 @@ uintmax_t	ft_cast_hex(uintmax_t temp, t_info *info, const char *str, int i)
 	else if (info->cast == _SIZET)
 		temp = va_arg(info->va_list, size_t);
 	else
-		temp = va_arg(info->va_list, int);
+		temp = va_arg(info->va_list, unsigned int);
 	return (temp);
 }
 
@@ -981,43 +996,51 @@ int		deal_with_types(t_info *info, const char *str, int i)
 		intmax_t temp;
 
 		temp = ft_cast_int(temp, info, str, i);
+		int prec = info->precision;
 
+		if (info->star && info->width < 0)
+		{
+			info->minus = 1;
+			info->width = -info->width;
+		}
 		if (info->width > 0)
 			info->width -= ft_intlen(temp);
+		if (info->width && temp == 0 && prec == 0 && info->dot)
+			info->width++;
 		if (info->precision > 0)
 		{
 			info->precision -= ft_intlen(temp);
-			info->width -= info->precision;
+			temp < 0 ? info->precision++ : 0;
+			info->width = info->precision > 0 ?
+				info->width - info->precision : info->width;
 		}
-
-		// printf("info->precision: %d\n", info->precision);
-		// printf("info->width: %d\n", info->width);
-		if (temp > 0 && info->plus)
+		// printf("info->width %d\n", info->width);
+		if ((temp >= 0 && info->plus)
+			|| (temp >= 0 && info->space && info->zero && info->width > 0))
 			info->width--;
-
 		if (info->width > 0)
 			info->res += info->width;
-		else if (info->precision > 0)
+		if (info->precision > 0)
 			info->res += info->precision;
-
-		// printf(" | res: %d | ", info->res);
-
 		int wid = info->width;
-
-		if (temp > 0 && info->space && !info->width)
+		if ((temp >= 0 && info->space && !info->width)
+			|| (temp >= 0 && info->space && info->zero && info->width > 0))
 		{
 			write(1, " ", 1);
 			info->res++;
-		}
 
-		if (temp > 0 && info->plus)
+		}
+		if (!info->minus && !info->zero)
+			while (info->width-- > 0)
+				write(1, " ", 1);
+		if (temp >= 0 && info->plus)
 		{
 			write(1, "+", 1);
 			info->res++;
-			// printf(" | res: %d | ", info->res);
 		}
-
-		if (info->zero && !info->precision)
+		// printf("info->width %d\n", info->width);
+		// printf("info->precision %d\n", info->precision);
+		if (!info->minus && info->zero && info->precision <= 0)
 		{
 			if (temp < 0)
 			{
@@ -1028,11 +1051,10 @@ int		deal_with_types(t_info *info, const char *str, int i)
 			while (info->width-- > 0)
 				write(1, "0", 1);
 		}
-		if (!info->minus)
+		else if (!info->minus && info->zero)
 			while (info->width-- > 0)
 				write(1, " ", 1);
-
-		if (temp < 0)
+		if (temp < 0 && temp != -9223372036854775808U)
 		{
 			write(1, "-", 1);
 			temp *= -1;
@@ -1040,111 +1062,466 @@ int		deal_with_types(t_info *info, const char *str, int i)
 		}
 		while (info->precision-- > 0)
 			write(1, "0", 1);
-		ft_putstr(ft_itoa(temp));
+		if (temp == 0 && prec == 0 && info->dot)
+			return (i);
+		char *str = ft_itoa(temp);
+		ft_putstr(str);
+		info->res += ft_intlen(temp);
 		if (info->minus)
 			while (wid-- > 0)
 				write(1, " ", 1);
-	
-		info->res += ft_intlen(temp);
-		// printf(" | res: %d | ", info->res);
+		free(str);
 	}
-	else if (str[i] == 's')
+	else if (str[i] == 'u' || str[i] == 'U')
 	{
-		char *temp = va_arg(info->va_list, char*);
-		int len;
-		if (!temp)
+		uintmax_t temp;
+
+		temp = ft_cast_hex(temp, info, str, i);
+		int prec = info->precision;
+		if (info->width > 0)
+			info->width -= ft_intlen_u(temp);
+
+		if (info->width && temp == 0 && prec == 0 && info->dot)
+			info->width++;
+		if (info->precision > 0)
 		{
-			len = 0;
-			temp = "(null)";
-			if (info->width)
-				info->width -= ft_strlen(temp);
+			info->precision -= ft_intlen_u(temp);
+			info->width = info->precision > 0 ?
+				info->width - info->precision : info->width;
 		}
-		else
-		{
-			len = ft_strlen(temp);
-			if (info->width)
-				info->width -= len;
-		}
-		if (info->plus)
-			info->width--;
+		if (info->width > 0)
+			info->res += info->width;
+		if (info->precision > 0)
+			info->res += info->precision;
 		int wid = info->width;
-
-		if (info->minus)
-		{
-			info->width = 0;
-		}
-
-		if (info->space && !info->width)
-			write(1, " ", 1);
-
-		
-		if (info->zero)
-			while (info->width-- > 0)
-				write(1, "0", 1);
-		else
+		if (!info->minus && !info->zero)
 			while (info->width-- > 0)
 				write(1, " ", 1);
-
-		if (temp > 0 && wid && info->plus)
-			write(1, "+", 1);
-		ft_putstr(temp);
-		info->res += len;
+		if (!info->minus && info->zero && info->precision <= 0)
+		{
+			while (info->width-- > 0)
+				write(1, "0", 1);
+		}
+		else if (!info->minus && info->zero)
+			while (info->width-- > 0)
+				write(1, " ", 1);
+		while (info->precision-- > 0)
+			write(1, "0", 1);
+		if (temp == 0 && prec == 0 && info->dot)
+			return (i);
+		char *str = ft_itoa_u(temp);
+		ft_putstr(str);
+		info->res += ft_intlen_u(temp);
+		if (info->minus)
+			while (wid-- > 0)
+				write(1, " ", 1);
+		free(str);
 	}
 	else if (str[i] == 'o')
 	{
-		int temp = va_arg(info->va_list, int);
-		char* lel = ft_itoa_base(temp, 8, 0);
-		ft_putstr(lel);
-		info->res += ft_strlen(lel);
+		uintmax_t temp;
+
+		temp = ft_cast_hex(temp, info, str, i);
+		char* str = ft_itoa_base(temp, 8, 0);
+		// printf("info->width %d\n", info->width);
+		// printf("info->precision %d\n", info->precision);
+
+		int prec = info->precision;
+		if (info->width > 0)
+			info->width -= ft_strlen(str);
+		if (info->hash && temp != 0)
+		{
+			info->width -= 1;
+			info->res += 1;
+		}
+		if (info->width && temp == 0 && prec == 0 && info->dot)
+			info->width++;
+		if (info->precision > 0)
+		{
+			info->precision -= ft_strlen(str);
+			info->width = info->precision > 0 ?
+				info->width - info->precision : info->width;
+		}
+		// printf("info->width %d\n", info->width);
+		// printf("info->precision %d\n", info->precision);
+		if (info->width > 0)
+			info->res += info->width;
+		if (info->precision > 0)
+			info->res += info->precision;
+		int wid = info->width;
+		if (!info->minus && !info->zero)
+			while (info->width-- > 0)
+				write(1, " ", 1);
+		// printf("info->width %d\n", info->width);
+		// printf("info->precision %d\n", info->precision);
+		if (!info->minus && info->zero && info->precision <= 0)
+		{
+			if (info->hash && temp != 0)
+				ft_putstr("0");
+			while (info->width-- > 0)
+				write(1, "0", 1);
+		}
+		else if (!info->minus && info->zero)
+			while (info->width-- > 0)
+				write(1, " ", 1);
+		while (info->precision-- > 0)
+			write(1, "0", 1);
+		if (temp == 0 && prec == 0 && info->dot && !info->hash)
+			return (i);
+		
+		if ((info->hash && temp != 0 && !info->zero)
+			|| (info->hash && temp != 0 && info->minus))
+		{
+			char *tmp = str;
+			str = ft_strjoin("0", tmp);
+			info->res -= 1;
+			free(tmp);
+		}
+		ft_putstr(str);
+		info->res += ft_strlen(str);
+		if (info->minus)
+			while (wid-- > 0)
+				write(1, " ", 1);
+		free(str);
 	}
 	else if (str[i] == 'O')
 	{
-		int temp = va_arg(info->va_list, int);
-		char* lel = ft_itoa_base(temp, 8, 1);
-		ft_putstr(lel);
-		info->res += ft_strlen(lel);
+		uintmax_t temp;
+		temp = ft_cast_hex(temp, info, str, i);
+		char* str = ft_itoa_base(temp, 8, 1);
+		int prec = info->precision;
+		if (info->width > 0)
+			info->width -= ft_strlen(str);
+		if (info->hash && temp != 0)
+		{
+			info->width -= 1;
+			info->res += 1;
+		}
+		if (info->width && temp == 0 && prec == 0 && info->dot)
+			info->width++;
+		if (info->precision > 0)
+		{
+			info->precision -= ft_strlen(str);
+			info->width = info->precision > 0 ?
+				info->width - info->precision : info->width;
+		}
+		if (info->width > 0)
+			info->res += info->width;
+		if (info->precision > 0)
+			info->res += info->precision;
+		int wid = info->width;
+		if (!info->minus && !info->zero)
+			while (info->width-- > 0)
+				write(1, " ", 1);
+		if (!info->minus && info->zero && info->precision <= 0)
+		{
+			if (info->hash && temp != 0)
+				ft_putstr("0");
+			while (info->width-- > 0)
+				write(1, "0", 1);
+		}
+		else if (!info->minus && info->zero)
+			while (info->width-- > 0)
+				write(1, " ", 1);
+		while (info->precision-- > 0)
+			write(1, "0", 1);
+		if (temp == 0 && prec == 0 && info->dot && !info->hash)
+			return (i);
+		if ((info->hash && temp != 0 && !info->zero)
+			|| (info->hash && temp != 0 && info->minus))
+		{
+			char *tmp = str;
+			str = ft_strjoin("0", tmp);
+			info->res -= 1;
+			free(tmp);
+		}
+		ft_putstr(str);
+		info->res += ft_strlen(str);
+		if (info->minus)
+			while (wid-- > 0)
+				write(1, " ", 1);
 	}
 	else if (str[i] == 'x')
 	{
-		int temp = va_arg(info->va_list, int);
-		char* lel = ft_itoa_base(temp, 16, 0);
-		ft_putstr(lel);
-		info->res += ft_strlen(lel);
+		uintmax_t temp;
+
+		temp = ft_cast_hex(temp, info, str, i);
+		char *str = ft_itoa_base(temp, 16, 0);
+		int prec = info->precision;
+		if (info->width > 0)
+			info->width -= ft_strlen(str);
+		if (info->hash && temp != 0)
+		{
+			info->width -= 2;
+			info->res += 2;
+		}
+		if (info->width && temp == 0 && prec == 0 && info->dot)
+			info->width++;
+		if (info->precision > 0)
+		{
+			info->precision -= ft_strlen(str);
+			info->width = info->precision > 0 ?
+				info->width - info->precision : info->width;
+		}
+		if (info->width > 0)
+			info->res += info->width;
+		if (info->precision > 0)
+			info->res += info->precision;
+		int wid = info->width;
+		if (!info->minus && !info->zero)
+			while (info->width-- > 0)
+				write(1, " ", 1);
+		if (!info->minus && info->zero && info->precision <= 0)
+		{
+			if (info->hash && temp != 0)
+				ft_putstr("0x");
+			while (info->width-- > 0)
+				write(1, "0", 1);
+		}
+		else if (!info->minus && info->zero)
+			while (info->width-- > 0)
+				write(1, " ", 1);
+		while (info->precision-- > 0)
+			write(1, "0", 1);
+		if (temp == 0 && prec == 0 && info->dot)
+			return (i);
+		if ((info->hash && temp != 0 && !info->zero)
+			|| (info->hash && temp != 0 && info->minus))
+		{
+			char *tmp = str;
+			str = ft_strjoin("0x", tmp);
+			info->res -= 2;
+			free(tmp);
+		}
+		ft_putstr(str);
+		info->res += ft_strlen(str);
+		if (info->minus)
+			while (wid-- > 0)
+				write(1, " ", 1);
+		free(str);
 	}
 	else if (str[i] == 'X')
 	{
-		int temp = va_arg(info->va_list, int);
-		char* lel = ft_itoa_base(temp, 16, 1);
-		ft_putstr(lel);
-		info->res += ft_strlen(lel);
+		uintmax_t temp;
+
+		temp = ft_cast_hex(temp, info, str, i);
+		char* str = ft_itoa_base(temp, 16, 1);
+		int prec = info->precision;
+		if (info->width > 0)
+			info->width -= ft_strlen(str);
+		if (info->hash && temp != 0)
+		{
+			info->width -= 2;
+			info->res += 2;
+		}
+		if (info->width && temp == 0 && prec == 0 && info->dot)
+			info->width++;
+		if (info->precision > 0)
+		{
+			info->precision -= ft_strlen(str);
+			info->width = info->precision > 0 ?
+				info->width - info->precision : info->width;
+		}
+		if (info->width > 0)
+			info->res += info->width;
+		if (info->precision > 0)
+			info->res += info->precision;
+		int wid = info->width;
+		if (!info->minus && !info->zero)
+			while (info->width-- > 0)
+				write(1, " ", 1);
+		if (!info->minus && info->zero && info->precision <= 0)
+		{
+			if (info->hash && temp != 0)
+				ft_putstr("0X");
+			while (info->width-- > 0)
+				write(1, "0", 1);
+		}
+		else if (!info->minus && info->zero)
+			while (info->width-- > 0)
+				write(1, " ", 1);
+		while (info->precision-- > 0)
+			write(1, "0", 1);
+		if (temp == 0 && prec == 0 && info->dot)
+			return (i);
+		if ((info->hash && temp != 0 && !info->zero)
+			|| (info->hash && temp != 0 && info->minus))
+		{
+			char *tmp = str;
+			str = ft_strjoin("0X", tmp);
+			info->res -= 2;
+			free(tmp);
+		}
+		ft_putstr(str);
+		info->res += ft_strlen(str);
+		if (info->minus)
+			while (wid-- > 0)
+				write(1, " ", 1);
+		free(str);
 	}
 	else if (str[i] == 'p')
 	{
-		uintmax_t	ret;
-		char		*str;
-		char		*tmp;
-		char		*buf;
+		uintmax_t	temp;
 
-		str = ft_strnew(2);
-		str[0] = '0';
-		str[1] = 'x';
-		ret = va_arg(info->va_list, uintmax_t);
-		if (ret == 0)
-			buf = ft_strjoin(str, "0");
-		else
+		temp = va_arg(info->va_list, uintmax_t);
+		int prec = info->precision;
+		char *str = ft_itoa_base(temp, 16, 0);
+		if (info->width > 0)
+			info->width -= ft_strlen(str) + 2;
+		if (info->width && temp == 0 && prec == 0 && info->dot)
+			info->width++;
+		if (info->precision > 0)
 		{
-			tmp = ft_itoa_base(ret, 16, 0);
-			buf = ft_strjoin(str, tmp);
-			free(tmp);
-			free(str);
+			temp != 0 ? info->precision -= ft_strlen(str) : 0;
+			info->width = info->precision > 0 ?
+				info->width - info->precision : info->width;
 		}
-		ft_putstr(buf);
-		info->res += ft_strlen(buf);
+		if (info->width > 0)
+			info->res += info->width;
+		if (info->precision > 0)
+			info->res += info->precision;
+		int wid = info->width;
+		if (!info->minus && !info->zero)
+			while (info->width-- > 0)
+				write(1, " ", 1);
+		if (temp == 0 && info->dot)
+		{
+			ft_putstr("0x");
+			while (info->precision-- > 0)
+				write(1, "0", 1);
+			info->res += 2;
+			return (i);
+		}
+		ft_putstr("0x");
+		while (info->precision-- > 0)
+			write(1, "0", 1);
+		if (!info->minus && info->zero && info->precision <= 0)
+			while (info->width-- > 0)
+				write(1, "0", 1);
+		else if (!info->minus && info->zero)
+			while (info->width-- > 0)
+				write(1, " ", 1);
+		ft_putstr(str);
+		info->res += ft_strlen(str) + 2;
+		if (info->minus)
+			while (wid-- > 0)
+				write(1, " ", 1);
+		free(str);
 	}
-	else if (str[i] == '%')
+	else if (str[i] == '%' && !info->smt)
 	{
+		if (info->width > 0)
+			info->width -= 1;
+		if (info->width && info->dot)
+			info->width++;
+		if (info->plus)
+			info->width--;
+		if (info->width > 0)
+			info->res += info->width;
+		int wid = info->width;
+		if (!info->minus && !info->zero)
+			while (info->width-- > 0)
+				write(1, " ", 1);
+		if (info->plus)
+		{
+			write(1, "+", 1);
+			info->res++;
+		}
+		if (!info->minus && info->zero)
+			while (info->width-- > 0)
+				write(1, "0", 1);
+		else if (!info->minus && info->zero)
+			while (info->width-- > 0)
+				write(1, " ", 1);
 		write(1, "%", 1);
 		info->res += 1;
+		if (info->minus)
+			while (wid-- > 0)
+				write(1, " ", 1);
+	}
+	// else if (str[i] == 's')
+	// {
+	// 	char *temp = va_arg(info->va_list, char*);
+	// 	int len;
+	// 	if (!temp)
+	// 	{
+	// 		len = 0;
+	// 		temp = "(null)";
+	// 		if (info->width)
+	// 			info->width -= ft_strlen(temp);
+	// 	}
+	// 	else
+	// 	{
+	// 		len = ft_strlen(temp);
+	// 		if (info->width)
+	// 			info->width -= len;
+	// 	}
+	// 	if (info->plus)
+	// 		info->width--;
+	// 	int wid = info->width;
+
+	// 	if (info->minus)
+	// 	{
+	// 		info->width = 0;
+	// 	}
+
+	// 	if (info->space && !info->width)
+	// 		write(1, " ", 1);
+
+		
+	// 	if (info->zero)
+	// 		while (info->width-- > 0)
+	// 			write(1, "0", 1);
+	// 	else
+	// 		while (info->width-- > 0)
+	// 			write(1, " ", 1);
+
+	// 	if (temp > 0 && wid && info->plus)
+	// 		write(1, "+", 1);
+	// 	ft_putstr(temp);
+	// 	info->res += len;
+	// }
+	else if (str[i] == 'c' || str[i] == 'C')
+	{
+		unsigned int temp;
+
+		if (info->cast == _LONG || str[i] == 'C')
+			temp = va_arg(info->va_list, wchar_t);
+		else
+			temp = va_arg(info->va_list, unsigned int);
+		if (info->star && info->width < 0)
+		{
+			info->minus = 1;
+			info->width = -info->width;
+		}
+		if (info->width > 0)
+			info->width -= 1;
+		if (info->width && temp == 0 && info->dot)
+			info->width++;
+		if (info->plus)
+			info->width--;
+		if (info->width > 0)
+			info->res += info->width;
+		int wid = info->width;
+		if (!info->minus && !info->zero && info->width > 0)
+			while (info->width-- > 0)
+				write(1, " ", 1);
+		if (info->plus)
+		{
+			write(1, "+", 1);
+			info->res++;
+		}
+		if (!info->minus && info->zero && info->precision <= 0)
+			while (info->width-- > 0)
+				write(1, "0", 1);
+		else if (!info->minus && info->zero)
+			while (info->width-- > 0)
+				write(1, " ", 1);
+		write(1, &temp, 1);
+		info->res += 1;
+		if (info->minus)
+			while (wid-- > 0)
+				write(1, " ", 1);
 	}
 	return (i);
 }
@@ -1356,128 +1733,128 @@ int		ft_printf(const char *msg, ...)
 // 	return (0);
 // }
 
-void	ft_print_result(int mr, int or, int line)
-{
-	static int c = 0;
-	printf("\033[33m[%d]\033[0m MINE = %i - ORIG = %i", c, mr, or);
-	if (mr == or)
-		printf("\t\033[32m✔\033[0m");
-	else
-		printf("\t\033[31m✘ - (failed between lines %i and %i)\033[0m",
-			   line - 3, line);
-	printf("\n---------------\n");
-	c++;
-}
+// void	ft_print_result(int mr, int or, int line)
+// {
+// 	static int c = 0;
+// 	printf("\033[33m[%d]\033[0m MINE = %i - ORIG = %i", c, mr, or);
+// 	if (mr == or)
+// 		printf("\t\033[32m✔\033[0m");
+// 	else
+// 		printf("\t\033[31m✘ - (failed between lines %i and %i)\033[0m",
+// 			   line - 3, line);
+// 	printf("\n---------------\n");
+// 	c++;
+// }
 
 
 
-int	mais(void)
-{
-	int	or, mr;
-	char	**test;
+// int	mais(void)
+// {
+// 	int	or, mr;
+// 	char	**test;
 
-	test = malloc(sizeof(char*));
-	or = 0;
-	mr = 0;
-	printf("\033[1;37m======== %%d ========\033[0m\n");
+// 	test = malloc(sizeof(char*));
+// 	or = 0;
+// 	mr = 0;
+// 	printf("\033[1;37m======== %%d ========\033[0m\n");
 
-	mr = ft_printf("MINE>\t[%d]\n", 650);
-	or = printf("ORIG>\t[%d]\n", 650);
-	ft_print_result(mr, or, __LINE__);
+// 	mr = ft_printf("MINE>\t[%d]\n", 650);
+// 	or = printf("ORIG>\t[%d]\n", 650);
+// 	ft_print_result(mr, or, __LINE__);
 
-	mr = ft_printf("MINE>\t[%d]\n", -650);
-	or = printf("ORIG>\t[%d]\n", -650);
-	ft_print_result(mr, or, __LINE__);
+// 	mr = ft_printf("MINE>\t[%d]\n", -650);
+// 	or = printf("ORIG>\t[%d]\n", -650);
+// 	ft_print_result(mr, or, __LINE__);
 
-	mr = ft_printf("MINE>\t[%+d]\n", 650);
-	or = printf("ORIG>\t[%+d]\n", 650);
-	ft_print_result(mr, or, __LINE__);
+// 	mr = ft_printf("MINE>\t[%+d]\n", 650);
+// 	or = printf("ORIG>\t[%+d]\n", 650);
+// 	ft_print_result(mr, or, __LINE__);
 
-	mr = ft_printf("MINE>\t[%+1d]\n", 650);
-	or = printf("ORIG>\t[%+1d]\n", 650);
-	ft_print_result(mr, or, __LINE__);
+// 	mr = ft_printf("MINE>\t[%+1d]\n", 650);
+// 	or = printf("ORIG>\t[%+1d]\n", 650);
+// 	ft_print_result(mr, or, __LINE__);
 
-	mr = ft_printf("MINE>\t[%+10d]\n", 650);
-	or = printf("ORIG>\t[%+10d]\n", 650);
-	ft_print_result(mr, or, __LINE__);
+// 	mr = ft_printf("MINE>\t[%+10d]\n", 650);
+// 	or = printf("ORIG>\t[%+10d]\n", 650);
+// 	ft_print_result(mr, or, __LINE__);
 
-	mr = ft_printf("MINE>\t[%+10d]\n", -650);
-	or = printf("ORIG>\t[%+10d]\n", -650);
-	ft_print_result(mr, or, __LINE__);
+// 	mr = ft_printf("MINE>\t[%+10d]\n", -650);
+// 	or = printf("ORIG>\t[%+10d]\n", -650);
+// 	ft_print_result(mr, or, __LINE__);
 
-	mr = ft_printf("MINE>\t[%10d]\n", 650);
-	or = printf("ORIG>\t[%10d]\n", 650);
-	ft_print_result(mr, or, __LINE__);
+// 	mr = ft_printf("MINE>\t[%10d]\n", 650);
+// 	or = printf("ORIG>\t[%10d]\n", 650);
+// 	ft_print_result(mr, or, __LINE__);
 
-	mr = ft_printf("MINE>\t[%-10d]\n", 650);
-	or = printf("ORIG>\t[%-10d]\n", 650);
-	ft_print_result(mr, or, __LINE__);
+// 	mr = ft_printf("MINE>\t[%-10d]\n", 650);
+// 	or = printf("ORIG>\t[%-10d]\n", 650);
+// 	ft_print_result(mr, or, __LINE__);
 
-	mr = ft_printf("MINE>\t[%-5d]\n", 650);
-	or = printf("ORIG>\t[%-5d]\n", 650);
-	ft_print_result(mr, or, __LINE__);
+// 	mr = ft_printf("MINE>\t[%-5d]\n", 650);
+// 	or = printf("ORIG>\t[%-5d]\n", 650);
+// 	ft_print_result(mr, or, __LINE__);
 
-	mr = ft_printf("MINE>\t[% d]\n", 650);
-	or = printf("ORIG>\t[% d]\n", 650);
-	ft_print_result(mr, or, __LINE__);
+// 	mr = ft_printf("MINE>\t[% d]\n", 650);
+// 	or = printf("ORIG>\t[% d]\n", 650);
+// 	ft_print_result(mr, or, __LINE__);
 
-	mr = ft_printf("MINE>\t[% 5d]\n", 650);
-	or = printf("ORIG>\t[% 5d]\n", 650);
-	ft_print_result(mr, or, __LINE__);
+// 	mr = ft_printf("MINE>\t[% 5d]\n", 650);
+// 	or = printf("ORIG>\t[% 5d]\n", 650);
+// 	ft_print_result(mr, or, __LINE__);
 
-	mr = ft_printf("MINE>\t[% d]\n", -650);
-	or = printf("ORIG>\t[% d]\n", -650);
-	ft_print_result(mr, or, __LINE__);
+// 	mr = ft_printf("MINE>\t[% d]\n", -650);
+// 	or = printf("ORIG>\t[% d]\n", -650);
+// 	ft_print_result(mr, or, __LINE__);
 
-	mr = ft_printf("MINE>\t[% 5d]\n", -650);
-	or = printf("ORIG>\t[% 5d]\n", -650);
-	ft_print_result(mr, or, __LINE__);
+// 	mr = ft_printf("MINE>\t[% 5d]\n", -650);
+// 	or = printf("ORIG>\t[% 5d]\n", -650);
+// 	ft_print_result(mr, or, __LINE__);
 
-	mr = ft_printf("MINE>\t[%05d]\n", -650);
-	or = printf("ORIG>\t[%05d]\n", -650);
-	ft_print_result(mr, or, __LINE__);
+// 	mr = ft_printf("MINE>\t[%05d]\n", -650);
+// 	or = printf("ORIG>\t[%05d]\n", -650);
+// 	ft_print_result(mr, or, __LINE__);
 
-	mr = ft_printf("MINE>\t[%+05d]\n", -650);
-	or = printf("ORIG>\t[%+05d]\n", -650);
-	ft_print_result(mr, or, __LINE__);
+// 	mr = ft_printf("MINE>\t[%+05d]\n", -650);
+// 	or = printf("ORIG>\t[%+05d]\n", -650);
+// 	ft_print_result(mr, or, __LINE__);
 
-	mr = ft_printf("MINE>\t[%-05d]\n", -650);
-	or = printf("ORIG>\t[%-05d]\n", -650);
-	ft_print_result(mr, or, __LINE__);
+// 	mr = ft_printf("MINE>\t[%-05d]\n", -650);
+// 	or = printf("ORIG>\t[%-05d]\n", -650);
+// 	ft_print_result(mr, or, __LINE__);
 
-	mr = ft_printf("MINE>\t[%+-05d]\n", -650);
-	or = printf("ORIG>\t[%+-05d]\n", -650);
-	ft_print_result(mr, or, __LINE__);
+// 	mr = ft_printf("MINE>\t[%+-05d]\n", -650);
+// 	or = printf("ORIG>\t[%+-05d]\n", -650);
+// 	ft_print_result(mr, or, __LINE__);
 
-	mr = ft_printf("MINE>\t[%+-09d]\n", -650);
-	or = printf("ORIG>\t[%+-09d]\n", -650);
-	ft_print_result(mr, or, __LINE__);
+// 	mr = ft_printf("MINE>\t[%+-09d]\n", -650);
+// 	or = printf("ORIG>\t[%+-09d]\n", -650);
+// 	ft_print_result(mr, or, __LINE__);
 
-	mr = ft_printf("MINE>\t[%+09d]\n", -650);
-	or = printf("ORIG>\t[%+09d]\n", -650);
-	ft_print_result(mr, or, __LINE__);
+// 	mr = ft_printf("MINE>\t[%+09d]\n", -650);
+// 	or = printf("ORIG>\t[%+09d]\n", -650);
+// 	ft_print_result(mr, or, __LINE__);
 
-	mr = ft_printf("MINE>\t[%+-1d]\n", -650);
-	or = printf("ORIG>\t[%+-1d]\n", -650);
-	ft_print_result(mr, or, __LINE__);
+// 	mr = ft_printf("MINE>\t[%+-1d]\n", -650);
+// 	or = printf("ORIG>\t[%+-1d]\n", -650);
+// 	ft_print_result(mr, or, __LINE__);
 
-	mr = ft_printf("MINE>\t[%+01d]\n", -650);
-	or = printf("ORIG>\t[%+01d]\n", -650);
-	ft_print_result(mr, or, __LINE__);
+// 	mr = ft_printf("MINE>\t[%+01d]\n", -650);
+// 	or = printf("ORIG>\t[%+01d]\n", -650);
+// 	ft_print_result(mr, or, __LINE__);
 
-	mr = ft_printf("MINE>\t[%'d]\n", 65000);
-	or = printf("ORIG>\t[%'d]\n", 65000);
-	ft_print_result(mr, or, __LINE__);
+// 	mr = ft_printf("MINE>\t[%'d]\n", 65000);
+// 	or = printf("ORIG>\t[%'d]\n", 65000);
+// 	ft_print_result(mr, or, __LINE__);
 
-	mr = ft_printf("MINE>\t[%'d]\n", 6500000);
-	or = printf("ORIG>\t[%'d]\n", 6500000);
-	ft_print_result(mr, or, __LINE__);
+// 	mr = ft_printf("MINE>\t[%'d]\n", 6500000);
+// 	or = printf("ORIG>\t[%'d]\n", 6500000);
+// 	ft_print_result(mr, or, __LINE__);
 
-	mr = ft_printf("MINE>\t[%+'d]\n", 65000);
-	or = printf("ORIG>\t[%+'d]\n", 65000);
-	ft_print_result(mr, or, __LINE__);
+// 	mr = ft_printf("MINE>\t[%+'d]\n", 65000);
+// 	or = printf("ORIG>\t[%+'d]\n", 65000);
+// 	ft_print_result(mr, or, __LINE__);
 
-	printf("\033[1;37m======== end %%d =====\033[0m\n\n");
+// 	printf("\033[1;37m======== end %%d =====\033[0m\n\n");
 
 	// printf("\033[1;37m======== %%u ========\033[0m\n");
 
@@ -2162,5 +2539,5 @@ int	mais(void)
 
 	// printf("\033[1;37m== End precision modifiers ==\033[0m\n\n");
 
-	return (0);
-}
+// 	return (0);
+// }

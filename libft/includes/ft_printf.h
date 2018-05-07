@@ -17,14 +17,7 @@
 # include <stdlib.h>
 # include <stdarg.h>
 # include <stdio.h>
-# include "../libft/includes/libft.h"
-
-# define BIT7 127
-# define BIT11 2047
-# define BIT16 65535
-# define BIT21 2097151
-# define BIT26 67108863
-# define BIT31 2147483647
+# include "libft.h"
 
 #define _LONG 1
 #define _UCHAR 2
@@ -43,10 +36,12 @@ typedef	struct		s_info
 	int				zero;
 	int				space;
 	int				star;
+	int				percent;
 	int				width;
 	int				precision;
 	int				cast;
 	int				dot;
+	int				smt;
 }					t_info;
 
 int		ft_printf(const char *msg, ...);

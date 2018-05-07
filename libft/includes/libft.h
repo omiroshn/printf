@@ -87,6 +87,7 @@ int				ft_iscntrl(int c);
 int				ft_isgraph(int c);
 int				ft_ispunct(int c);
 int				ft_isspace(int c);
+int				ft_printf(const char *msg, ...);
 char			*ft_itoa_base(uintmax_t num, int base, int flag);
 int				ft_atoi_base(char *str, int base);
 int				get_next_line(const int fd, char **line);
