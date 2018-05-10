@@ -773,6 +773,18 @@
 // 	return (i + 1);
 // }
 
+union my_num
+{
+	intmax_t	imaxt;
+	wint_t		wit;
+    char c;
+    short i;
+    long l;
+    float f;
+    double d;
+    char* s;
+};
+
 char	*ft_itoa_u(uintmax_t n)
 {
 	char		*str;
@@ -827,16 +839,6 @@ int		ft_intlen(intmax_t num)
 	return (count);
 }
 
-int		is_flag(char c)
-{
-	if (c == 's' || c == 'S' || c == 'p' || c == 'd'
-		|| c == 'D' || c == 'i' || c == 'o' || c == 'O'
-		|| c == 'u' || c == 'U' || c == 'x' || c == 'X'
-		|| c == 'c' || c == 'C')
-		return (1);
-	return (0);
-}
-
 void	init_flags(t_info *info)
 {
 	info->hash = 0;
@@ -852,6 +854,48 @@ void	init_flags(t_info *info)
 	info->smt = 0;
 }
 
+int		ft_ucharlen(int c)
+{
+	if (c <= 0x7F)
+		return (1);
+	else if (c <= 0x7FF)
+		return (2);
+	else if (c <= 0xFFFF)
+		return (3);
+	else if (c <= 0x10FFFF)
+		return (4);
+	return (0);
+}
+
+int		ft_ustrlen(wchar_t *str)
+{
+	int i;
+	int len;
+
+	i = 0;
+	len = 0;
+	while(str[i])
+		len += ft_ucharlen(str[i++]);
+	return (len);
+}
+
+void	ft_putustrl(wint_t const *s, int len)
+{
+	if (!s)
+		return (ft_putstr("(null)"));
+	while (*s < len)
+		ft_putchar(*s++);
+}
+
+void	ft_putstrl(char *str, int len)
+{
+	int i;
+
+	i = -1;
+	while (++i < len)
+		write(1, &str[i], 1);
+}
+
 int		count_width(const char *str)
 {
 	int i;
@@ -860,6 +904,16 @@ int		count_width(const char *str)
 	while (str[i] >= '0' && str[i] <= '9')
 		i++;
 	return (i);
+}
+
+char	*ft_strcut(char *str, int len)
+{
+	int i;
+
+	i = ft_strlen(str);
+	while (i >= len)
+		str[i--] = '\0';
+	return (str);
 }
 
 int		count_stoi(const char *str)
@@ -882,6 +936,16 @@ int		someth_else(char c)
 {
 	if (c != '-' || c != '+' || c != ' ' || c != '#' || c != '0'
 		|| c != '*' || c != '.' || !(c > '0' && c <= '9'))
+		return (1);
+	return (0);
+}
+
+int		is_flag(char c)
+{
+	if (c == 's' || c == 'S' || c == 'p' || c == 'd'
+		|| c == 'D' || c == 'i' || c == 'o' || c == 'O'
+		|| c == 'u' || c == 'U' || c == 'x' || c == 'X'
+		|| c == 'c' || c == 'C')
 		return (1);
 	return (0);
 }
@@ -943,6 +1007,8 @@ int		deal_with_flags(t_info *info, const char *str, int i)
 		else if (someth_else(str[i]))
 		{
 			info->smt = 1;
+			if (info->width || info->minus)
+				return (i);
 			return (--i);
 		}
 		else
@@ -991,13 +1057,14 @@ intmax_t	ft_cast_int(intmax_t temp, t_info *info, const char *str, int i)
 
 int		deal_with_types(t_info *info, const char *str, int i)
 {
+	union my_num num;
+
 	if (str[i] == 'd' || str[i] == 'D' || str[i] == 'i')
 	{
 		intmax_t temp;
 
 		temp = ft_cast_int(temp, info, str, i);
 		int prec = info->precision;
-
 		if (info->star && info->width < 0)
 		{
 			info->minus = 1;
@@ -1014,7 +1081,6 @@ int		deal_with_types(t_info *info, const char *str, int i)
 			info->width = info->precision > 0 ?
 				info->width - info->precision : info->width;
 		}
-		// printf("info->width %d\n", info->width);
 		if ((temp >= 0 && info->plus)
 			|| (temp >= 0 && info->space && info->zero && info->width > 0))
 			info->width--;
@@ -1038,8 +1104,6 @@ int		deal_with_types(t_info *info, const char *str, int i)
 			write(1, "+", 1);
 			info->res++;
 		}
-		// printf("info->width %d\n", info->width);
-		// printf("info->precision %d\n", info->precision);
 		if (!info->minus && info->zero && info->precision <= 0)
 		{
 			if (temp < 0)
@@ -1080,7 +1144,6 @@ int		deal_with_types(t_info *info, const char *str, int i)
 		int prec = info->precision;
 		if (info->width > 0)
 			info->width -= ft_intlen_u(temp);
-
 		if (info->width && temp == 0 && prec == 0 && info->dot)
 			info->width++;
 		if (info->precision > 0)
@@ -1123,9 +1186,6 @@ int		deal_with_types(t_info *info, const char *str, int i)
 
 		temp = ft_cast_hex(temp, info, str, i);
 		char* str = ft_itoa_base(temp, 8, 0);
-		// printf("info->width %d\n", info->width);
-		// printf("info->precision %d\n", info->precision);
-
 		int prec = info->precision;
 		if (info->width > 0)
 			info->width -= ft_strlen(str);
@@ -1142,8 +1202,6 @@ int		deal_with_types(t_info *info, const char *str, int i)
 			info->width = info->precision > 0 ?
 				info->width - info->precision : info->width;
 		}
-		// printf("info->width %d\n", info->width);
-		// printf("info->precision %d\n", info->precision);
 		if (info->width > 0)
 			info->res += info->width;
 		if (info->precision > 0)
@@ -1152,8 +1210,6 @@ int		deal_with_types(t_info *info, const char *str, int i)
 		if (!info->minus && !info->zero)
 			while (info->width-- > 0)
 				write(1, " ", 1);
-		// printf("info->width %d\n", info->width);
-		// printf("info->precision %d\n", info->precision);
 		if (!info->minus && info->zero && info->precision <= 0)
 		{
 			if (info->hash && temp != 0)
@@ -1168,7 +1224,6 @@ int		deal_with_types(t_info *info, const char *str, int i)
 			write(1, "0", 1);
 		if (temp == 0 && prec == 0 && info->dot && !info->hash)
 			return (i);
-		
 		if ((info->hash && temp != 0 && !info->zero)
 			|| (info->hash && temp != 0 && info->minus))
 		{
@@ -1408,12 +1463,159 @@ int		deal_with_types(t_info *info, const char *str, int i)
 				write(1, " ", 1);
 		free(str);
 	}
+	else if (str[i] == 's')
+	{
+		char *temp;
+
+		temp = va_arg(info->va_list, char*);
+		int prec = info->precision;
+		if (info->star && info->width < 0)
+		{
+			info->minus = 1;
+			info->width = -info->width;
+		}
+		if (!temp)
+			temp = "(null)";
+		// printf("1 info->width %d\n", info->width);
+		// printf("1 info->precision %d\n", info->precision);
+		if (info->width > 0 && ft_strlen(temp) > info->precision)
+		{
+			if (info->precision > 0)
+			{
+				printf("1\n");
+				info->width -= info->precision;
+			}
+			else if (info->precision > 0 && !info->dot)
+			{
+				info->width -= ft_strlen(temp);
+			}
+		}
+		// printf("2 info->width %d\n", info->width);
+		// printf("2 info->precision %d\n", info->precision);
+		if (info->precision > 0 && ft_strlen(temp) < info->precision)
+			info->width -= ft_strlen(temp);
+		// printf("3 info->width %d\n", info->width);
+		// printf("3 info->precision %d\n", info->precision);
+		// printf("13 info->res %d\n", info->res);
+		if (info->width > 0)
+			info->res += info->width;
+		// printf("2 info->res %d\n", info->res);
+		int wid = info->width;
+		if (!info->minus && !info->zero)
+			while (info->width-- > 0)
+				write(1, " ", 1);
+		// printf("4 info->width %d\n", info->width);
+		// printf("4 info->precision %d\n", info->precision);
+		if (!info->minus && info->zero && info->precision <= 0)
+			while (info->width-- > 0)
+				write(1, "0", 1);
+		else if (!info->minus && info->zero)
+			while (info->width-- > 0)
+				write(1, " ", 1);
+
+		if (info->precision > 0 && ft_strlen(temp) > info->precision)
+		{
+			ft_putstrl(temp, info->precision);
+			info->res += info->precision;
+			// printf("3 info->res %d\n", info->res);
+		}
+		else
+		{
+			ft_putstrl(temp, info->width);
+			info->res += info->width + 1;
+			// printf("4 info->res %d\n", info->res);
+		}
+		if (info->minus)
+			while (wid-- > 0)
+				write(1, " ", 1);
+	}
+	else if (str[i] == 'S')
+	{
+		wint_t *temp;
+
+		temp = va_arg(info->va_list, wint_t*);
+		int prec = info->precision;
+		// printf("info->width %d\n", info->width);
+		// printf("info->precision %d\n", info->precision);
+		if (info->star && info->width < 0)
+		{
+			info->minus = 1;
+			info->width = -info->width;
+		}
+		if (!temp)
+			temp = L"(null)";
+		info->width -= ft_ustrlen(temp);
+		if (info->width && temp == 0 && prec == 0 && info->dot)
+			info->width++;
+		if (info->precision > 0)
+		{
+			info->precision -= ft_ustrlen(temp);
+			info->width = info->precision > 0 ?
+				info->width - info->precision : info->width;
+		}
+		// printf("info->width %d\n", info->width);
+		// printf("info->precision %d\n", info->precision);
+		if (info->width > 0)
+			info->res += info->width;
+		if (info->precision > 0)
+			info->res += info->precision;
+		int wid = info->width;
+		if (!info->minus && !info->zero)
+			while (info->width-- > 0)
+				write(1, " ", 1);
+		if (temp == 0 && prec == 0 && info->dot)
+			return (i);
+		ft_putustrl(temp, info->precision);
+		info->res += ft_ustrlen(temp);
+		if (info->minus)
+			while (wid-- > 0)
+				write(1, " ", 1);
+	}
+	else if (str[i] == 'c' || str[i] == 'C')
+	{
+		wint_t temp;
+
+		if (info->cast == _LONG || str[i] == 'C')
+			temp = va_arg(info->va_list, wchar_t);
+		else
+			temp = (unsigned char)va_arg(info->va_list, unsigned int);
+		if (info->star && info->width < 0)
+		{
+			info->minus = 1;
+			info->width = -info->width;
+		}
+		if (info->width > 0)
+			info->width -= 1;
+		if (info->width > 0)
+			info->res += info->width;
+		int wid = info->width;
+		if (!info->minus && !info->zero && info->width > 0)
+			while (info->width-- > 0)
+				write(1, " ", 1);
+		if (!info->minus && info->zero && info->precision <= 0)
+			while (info->width-- > 0)
+				write(1, "0", 1);
+		else if (!info->minus && info->zero)
+			while (info->width-- > 0)
+				write(1, " ", 1);
+		if (str[i] == 'C' || info->cast == _LONG)
+		{
+			ft_putchar(temp);
+			info->res += ft_ucharlen(temp);
+		}
+		else
+		{
+			write(1, &temp, 1);
+			info->res++;
+		}
+		if (info->minus)
+			while (wid-- > 0)
+				write(1, " ", 1);
+	}
 	else if (str[i] == '%' && !info->smt)
 	{
 		if (info->width > 0)
 			info->width -= 1;
-		if (info->width && info->dot)
-			info->width++;
 		if (info->plus)
 			info->width--;
 		if (info->width > 0)
@@ -1439,85 +1641,19 @@ int		deal_with_types(t_info *info, const char *str, int i)
 			while (wid-- > 0)
 				write(1, " ", 1);
 	}
-	// else if (str[i] == 's')
-	// {
-	// 	char *temp = va_arg(info->va_list, char*);
-	// 	int len;
-	// 	if (!temp)
-	// 	{
-	// 		len = 0;
-	// 		temp = "(null)";
-	// 		if (info->width)
-	// 			info->width -= ft_strlen(temp);
-	// 	}
-	// 	else
-	// 	{
-	// 		len = ft_strlen(temp);
-	// 		if (info->width)
-	// 			info->width -= len;
-	// 	}
-	// 	if (info->plus)
-	// 		info->width--;
-	// 	int wid = info->width;
-
-	// 	if (info->minus)
-	// 	{
-	// 		info->width = 0;
-	// 	}
-
-	// 	if (info->space && !info->width)
-	// 		write(1, " ", 1);
-
-		
-	// 	if (info->zero)
-	// 		while (info->width-- > 0)
-	// 			write(1, "0", 1);
-	// 	else
-	// 		while (info->width-- > 0)
-	// 			write(1, " ", 1);
-
-	// 	if (temp > 0 && wid && info->plus)
-	// 		write(1, "+", 1);
-	// 	ft_putstr(temp);
-	// 	info->res += len;
-	// }
-	else if (str[i] == 'c' || str[i] == 'C')
+	else if (info->smt)
 	{
-		unsigned int temp;
-
-		if (info->cast == _LONG || str[i] == 'C')
-			temp = va_arg(info->va_list, wchar_t);
-		else
-			temp = va_arg(info->va_list, unsigned int);
-		if (info->star && info->width < 0)
-		{
-			info->minus = 1;
-			info->width = -info->width;
-		}
 		if (info->width > 0)
 			info->width -= 1;
-		if (info->width && temp == 0 && info->dot)
-			info->width++;
 		if (info->plus)
 			info->width--;
 		if (info->width > 0)
 			info->res += info->width;
 		int wid = info->width;
-		if (!info->minus && !info->zero && info->width > 0)
+		if (!info->minus && !info->zero)
 			while (info->width-- > 0)
 				write(1, " ", 1);
-		if (info->plus)
-		{
-			write(1, "+", 1);
-			info->res++;
-		}
-		if (!info->minus && info->zero && info->precision <= 0)
-			while (info->width-- > 0)
-				write(1, "0", 1);
-		else if (!info->minus && info->zero)
-			while (info->width-- > 0)
-				write(1, " ", 1);
-		write(1, &temp, 1);
+		write(1, &str[i], 1);
 		info->res += 1;
 		if (info->minus)
 			while (wid-- > 0)
