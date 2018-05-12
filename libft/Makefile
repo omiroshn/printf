@@ -75,7 +75,20 @@ LIBFT = ft_atoi \
 		ft_atoi_base \
 		rgb_to_int \
 		rgb_smooth \
-		ft_printf
+		ft_printf \
+		print_d \
+		print_u \
+		print_o \
+		print_lo \
+		print_x \
+		print_lx \
+		print_p \
+		print_ls \
+		print_s \
+		print_c \
+		print_percent \
+		print_else \
+		printf_cast
 OBJ = $(addprefix obj/, $(addsuffix .o, $(LIBFT)))
 OBJ_LIST = $(addsuffix .o, $(LIBFT))
 HEADERS = -I./includes
@@ -98,5 +111,6 @@ clean:
 	@echo  "\033[31m[ ✔ ] Objects files \033[91m$(OBJ_LIST) \033[0m\033[31m removed. \033[0m"
 fclean: clean
 	@rm -rf $(NAME)
+	@rm -rf libft.a
 	@echo "\033[31m[ ✔ ] Lib \033[1;31m$(NAME) \033[1;0m\033[31mremoved.\033[0m"
 re: fclean all

@@ -17,8 +17,8 @@ int main()
 {
 	setlocale(P_ALL, "");
 
-	printf("OR res: %d\n",   printf("OR: %d\n", 10));
-	printf("OR res: %d\n",ft_printf("MY: %d\n", 10));
+	printf("OR res: %d\n",   printf("OR: %ld\n", 11111111111));
+	printf("OR res: %d\n",ft_printf("MY: %ld\n", 11111111111));
 
 	return (0);
 }
