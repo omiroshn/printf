@@ -11,7 +11,7 @@
 # **************************************************************************** #
 
 NAME = libftprintf.a
-CC = clang
+CC = gcc
 FLAGS = -Wall -Wextra -Werror -Ofast
 LIBFT = ft_atoi \
 		ft_bzero \
