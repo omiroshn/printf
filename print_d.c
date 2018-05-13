@@ -12,36 +12,40 @@
 
 #include "ft_printf.h"
 
-int			print_d(t_info *info, s_num n, const char *str, int i)
+inline static void	print_aa(t_info *info, t_num *n, const char *str, int i)
 {
-	n.imaxt = ft_cast_int(n.imaxt, info, str, i);
-	n.prec = info->precision;
+	n->imaxt = ft_cast_int(n->imaxt, info, str, i);
+	n->prec = info->precision;
 	if (info->star && info->width < 0)
 	{
 		info->minus = 1;
 		info->width = -info->width;
 	}
 	if (info->width > 0)
-		info->width -= ft_intlen(n.imaxt);
-	if (info->width && n.imaxt == 0 && n.prec == 0 && info->dot)
+		info->width -= ft_intlen(n->imaxt);
+	if (info->width && n->imaxt == 0 && n->prec == 0 && info->dot)
 		info->width++;
 	if (info->precision > 0)
 	{
-		info->precision -= ft_intlen(n.imaxt);
-		n.imaxt < 0 ? info->precision++ : 0;
+		info->precision -= ft_intlen(n->imaxt);
+		n->imaxt < 0 ? info->precision++ : 0;
 		info->width = info->precision > 0 ?
 			info->width - info->precision : info->width;
 	}
-	if ((n.imaxt >= 0 && info->plus)
-		|| (n.imaxt >= 0 && info->space && info->zero && info->width > 0))
+	if ((n->imaxt >= 0 && info->plus)
+		|| (n->imaxt >= 0 && info->space && info->zero && info->width > 0))
 		info->width--;
+}
+
+inline static void	print_bb(t_info *info, t_num *n)
+{
 	if (info->width > 0)
 		info->res += info->width;
 	if (info->precision > 0)
 		info->res += info->precision;
-	n.wid = info->width;
-	if ((n.imaxt >= 0 && info->space && !info->width)
-		|| (n.imaxt >= 0 && info->space && info->zero && info->width > 0))
+	n->wid = info->width;
+	if ((n->imaxt >= 0 && info->space && !info->width)
+		|| (n->imaxt >= 0 && info->space && info->zero && info->width > 0))
 	{
 		write(1, " ", 1);
 		info->res++;
@@ -49,17 +53,21 @@ int			print_d(t_info *info, s_num n, const char *str, int i)
 	if (!info->minus && !info->zero)
 		while (info->width-- > 0)
 			write(1, " ", 1);
-	if (n.imaxt >= 0 && info->plus)
+	if (n->imaxt >= 0 && info->plus)
 	{
 		write(1, "+", 1);
 		info->res++;
 	}
+}
+
+inline static void	print_cc(t_info *info, t_num *n)
+{
 	if (!info->minus && info->zero && info->precision <= 0)
 	{
-		if (n.imaxt < 0)
+		if (n->imaxt < 0)
 		{
 			write(1, "-", 1);
-			n.imaxt *= -1;
+			n->imaxt *= -1;
 			info->res++;
 		}
 		while (info->width-- > 0)
@@ -68,12 +76,19 @@ int			print_d(t_info *info, s_num n, const char *str, int i)
 	else if (!info->minus && info->zero)
 		while (info->width-- > 0)
 			write(1, " ", 1);
-	if (n.imaxt < 0 && n.imaxt != -9223372036854775808U)
+	if (n->imaxt < 0 && (unsigned long)n->imaxt != -9223372036854775808U)
 	{
 		write(1, "-", 1);
-		n.imaxt *= -1;
+		n->imaxt *= -1;
 		info->res++;
 	}
+}
+
+int					print_d(t_info *info, t_num n, const char *str, int i)
+{
+	print_aa(info, &n, str, i);
+	print_bb(info, &n);
+	print_cc(info, &n);
 	while (info->precision-- > 0)
 		write(1, "0", 1);
 	if (n.imaxt == 0 && n.prec == 0 && info->dot)

@@ -1,28 +1,34 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   print_u.c                                          :+:      :+:    :+:   */
+/*   print_lx.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: omiroshn <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2018/05/12 20:50:28 by omiroshn          #+#    #+#             */
-/*   Updated: 2018/05/12 20:50:29 by omiroshn         ###   ########.fr       */
+/*   Created: 2018/05/12 20:50:46 by omiroshn          #+#    #+#             */
+/*   Updated: 2018/05/12 20:50:47 by omiroshn         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ft_printf.h"
 
-int		print_u(t_info *info, s_num n, const char *str, int i)
+inline static void	print_aa(t_info *info, t_num *n, const char *str, int i)
 {
-	n.imaxt = ft_cast_hex(n.imaxt, info, str, i);
-	n.prec = info->precision;
+	n->uimaxt = ft_cast_hex(n->uimaxt, info, str, i);
+	n->s = ft_itoa_base(n->uimaxt, 16, 1);
+	n->prec = info->precision;
 	if (info->width > 0)
-		info->width -= ft_intlen_u(n.imaxt);
-	if (info->width && n.imaxt == 0 && n.prec == 0 && info->dot)
+		info->width -= ft_strlen(n->s);
+	if (info->hash && n->uimaxt != 0)
+	{
+		info->width -= 2;
+		info->res += 2;
+	}
+	if (info->width && n->uimaxt == 0 && n->prec == 0 && info->dot)
 		info->width++;
 	if (info->precision > 0)
 	{
-		info->precision -= ft_intlen_u(n.imaxt);
+		info->precision -= ft_strlen(n->s);
 		info->width = info->precision > 0 ?
 			info->width - info->precision : info->width;
 	}
@@ -30,23 +36,45 @@ int		print_u(t_info *info, s_num n, const char *str, int i)
 		info->res += info->width;
 	if (info->precision > 0)
 		info->res += info->precision;
-	n.wid = info->width;
+	n->wid = info->width;
+}
+
+inline static void	print_bb(t_info *info, t_num *n)
+{
 	if (!info->minus && !info->zero)
 		while (info->width-- > 0)
 			write(1, " ", 1);
-	if (!info->minus && info->zero && info->precision <= 0)
+	if ((!info->minus && info->zero && info->precision <= 0) ||
+		(!info->minus && info->dot && info->precision))
+	{
+		if (info->hash && n->uimaxt != 0)
+			ft_putstr("0X");
 		while (info->width-- > 0)
 			write(1, "0", 1);
+	}
 	else if (!info->minus && info->zero)
 		while (info->width-- > 0)
 			write(1, " ", 1);
 	while (info->precision-- > 0)
 		write(1, "0", 1);
-	if (n.imaxt == 0 && n.prec == 0 && info->dot)
+}
+
+int					print_lx(t_info *info, t_num n, const char *str, int i)
+{
+	print_aa(info, &n, str, i);
+	print_bb(info, &n);
+	if (n.uimaxt == 0 && n.prec == 0 && info->dot)
 		return (i);
-	n.s = ft_itoa_u(n.imaxt);
+	if ((info->hash && n.uimaxt != 0 && !info->zero && !info->dot)
+		|| (info->hash && n.uimaxt != 0 && info->minus && !info->dot))
+	{
+		n.s2 = n.s;
+		n.s = ft_strjoin("0X", n.s2);
+		info->res -= 2;
+		free(n.s2);
+	}
 	ft_putstr(n.s);
-	info->res += ft_intlen_u(n.imaxt);
+	info->res += ft_strlen(n.s);
 	if (info->minus)
 		while (n.wid-- > 0)
 			write(1, " ", 1);

@@ -12,17 +12,17 @@
 
 #include "ft_printf.h"
 
-int		print_p(t_info *info, s_num n, const char *str, int i)
+inline static void	print(t_info *info, t_num *n)
 {
-	n.uimaxt = va_arg(info->va_list, uintmax_t);
-	n.s = ft_itoa_base(n.uimaxt, 16, 0);
+	n->uimaxt = va_arg(info->valist, uintmax_t);
+	n->s = ft_itoa_base(n->uimaxt, 16, 0);
 	if (info->width > 0)
-		info->width -= ft_strlen(n.s) + 2;
-	if (info->width && n.uimaxt == 0 && info->precision == 0 && info->dot)
+		info->width -= ft_strlen(n->s) + 2;
+	if (info->width && n->uimaxt == 0 && info->precision == 0 && info->dot)
 		info->width++;
 	if (info->precision > 0)
 	{
-		n.uimaxt != 0 ? info->precision -= ft_strlen(n.s) : 0;
+		n->uimaxt != 0 ? info->precision -= ft_strlen(n->s) : 0;
 		info->width = info->precision > 0 ?
 			info->width - info->precision : info->width;
 	}
@@ -30,10 +30,15 @@ int		print_p(t_info *info, s_num n, const char *str, int i)
 		info->res += info->width;
 	if (info->precision > 0)
 		info->res += info->precision;
-	n.wid = info->width;
+	n->wid = info->width;
 	if (!info->minus && !info->zero)
 		while (info->width-- > 0)
 			write(1, " ", 1);
+}
+
+int					print_p(t_info *info, t_num n, int i)
+{
+	print(info, &n);
 	if (n.uimaxt == 0 && info->dot)
 	{
 		ft_putstr("0x");
